@@ -30,7 +30,7 @@ This file is generated from `templates/run-readme.md.template` at the repo root.
 
 | Token | What it becomes |
 |---|---|
-| `{{slug}}` | Run slug (e.g. `budget-laptop-india-linux-dev`) |
+| `{{slug}}` | Run slug (e.g. `vector-db-comparison-2026`) |
 | `{{status}}` | `Final` / `In progress` / `Revised` |
 | `{{date}}` | Run date `YYYY-MM-DD` |
 | `{{complexity}}` | `simple` / `comparison` / `complex` |

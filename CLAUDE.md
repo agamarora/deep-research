@@ -74,10 +74,11 @@ The lead-researcher classifies in `plan.md` and dispatches accordingly. Don't ma
     research.md              # /research entry point
   skills/
     deep-research/SKILL.md   # framework guide
-reports/                     # run outputs, git-tracked. NOTE: framework writes here by default.
-                             # If your project already uses reports/ for something else,
-                             # edit the path in .claude/agents/lead-researcher.md and
-                             # .claude/commands/research.md. Path config is v0.1 work.
+reports/                     # run outputs. GITIGNORED in this framework repo.
+                             # In your own project: untrack or commit per your preference.
+                             # If you already use reports/ for something else, edit the path
+                             # in .claude/agents/lead-researcher.md and .claude/commands/research.md.
+                             # Path config goes to v0.1.
 templates/                   # reusable scaffolds; run-readme.md.template controls cover page
 memory/                      # auto-memory per global convention
 README.md                    # OSS-facing pitch + usage

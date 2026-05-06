@@ -19,12 +19,12 @@ That's it. Open your project in Claude Code, type `/research`.
 ## Use
 
 ```
-/research best laptop in India under ₹75,000 for Linux dev work
+/research competitive landscape of OSS multi-agent frameworks in 2026
 ```
 
 The `lead-researcher` subagent plans the work, dispatches parallel `subagent-researcher` workers, synthesizes a draft, runs `critic` for adversarial review, then `citation-checker` to verify every claim. Output lands at `reports/<YYYY-MM-DD>-<slug>/` with a cover-page `README.md` GitHub auto-renders.
 
-[See the first dogfood run →](reports/2026-05-06-budget-laptop-india-linux-dev/)
+> `reports/` is **gitignored by default in this repo** — research output is your own; track or ignore it in your own project as you see fit.
 
 ---
 
@@ -107,8 +107,8 @@ Yes, in your fork. The base framework deliberately doesn't, because the install 
 
 This framework's edge is install simplicity (clone + copy + `/research`) and the no-API-key constraint that flows from it.
 
-**Q: Why are reports tracked in the repo?**
-Search and revisit. Research compounds; throwing it away is the loss.
+**Q: Are reports tracked in this repo?**
+No. `reports/` is gitignored in this framework repo. In your own project that installs the framework, you choose: tracked (search + revisit, research compounds) or local-only (privacy, smaller repo). If you want to track, remove the `reports/` line from your `.gitignore` after installing.
 
 ## Eight design principles (Anthropic-derived)
 
