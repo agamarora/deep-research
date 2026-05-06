@@ -1,0 +1,41 @@
+# Research run: {{slug}}
+
+**Status**: {{status}} · **Date**: {{date}} · **Complexity**: {{complexity}}
+
+> {{query_one_line}}
+
+## TL;DR
+
+{{tldr_block}}
+
+## Files in this run
+
+- **[synthesis.md](synthesis.md)** — final report (start here)
+- [audit.md](audit.md) — critic + citation audit
+- [claims.md](claims.md) — atomic claims with citation refs
+- [sources.md](sources.md) — sources, credibility-tiered
+- [plan.md](plan.md) — research plan + decomposition
+- [notes/](notes/) — per-subagent notes
+- [meta.json](meta.json) — run metadata
+
+{{optional_sections}}
+
+---
+
+## Customizing this template
+
+This file is generated from `templates/run-readme.md.template` at the repo root.
+
+**To change the default cover page** for all future runs, edit that template. Available substitutions:
+
+| Token | What it becomes |
+|---|---|
+| `{{slug}}` | Run slug (e.g. `budget-laptop-india-linux-dev`) |
+| `{{status}}` | `Final` / `In progress` / `Revised` |
+| `{{date}}` | Run date `YYYY-MM-DD` |
+| `{{complexity}}` | `simple` / `comparison` / `complex` |
+| `{{query_one_line}}` | One-line query restatement |
+| `{{tldr_block}}` | The TL;DR block from `synthesis.md`, copied verbatim |
+| `{{optional_sections}}` | Reserved for per-domain extensions (e.g. comparison matrix preview, decision summary) |
+
+**To override per-run** (rare): write `templates/run-readme-<slug>.md.template`. The lead-researcher will pick the most-specific match. Keep the standard template the default.

@@ -1,0 +1,88 @@
+name: Lint
+
+on:
+  pull_request:
+    paths:
+      - '.claude/agents/**.md'
+      - '.claude/commands/**.md'
+      - '.claude/skills/**/SKILL.md'
+      - '.github/workflows/lint.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.claude/agents/**.md'
+      - '.claude/commands/**.md'
+      - '.claude/skills/**/SKILL.md'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  frontmatter:
+    name: YAML frontmatter
+    runs-on: ubuntu-latest
+    steps:
+      # actions/checkout@v4.1.7 pinned by SHA
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+
+      - name: Validate frontmatter
+        shell: bash
+        run: |
+          set -euo pipefail
+          fail=0
+
+          check_frontmatter() {
+            local file="$1"
+            local required="$2"
+
+            # Must start with ---
+            if ! head -n 1 "$file" | grep -q '^---$'; then
+              echo "::error file=$file::missing opening --- (no YAML frontmatter)"
+              return 1
+            fi
+
+            # Closing --- within first 50 lines
+            if ! head -n 50 "$file" | tail -n +2 | grep -q '^---$'; then
+              echo "::error file=$file::missing closing --- in first 50 lines"
+              return 1
+            fi
+
+            # Required fields present
+            local fm
+            fm=$(awk '/^---$/{c++; next} c==1' "$file" | head -n 50)
+            for field in $required; do
+              if ! echo "$fm" | grep -qE "^${field}:"; then
+                echo "::error file=$file::missing required frontmatter field: ${field}"
+                return 1
+              fi
+            done
+          }
+
+          # Agents: name, description, tools, model required
+          for f in .claude/agents/*.md; do
+            [ -f "$f" ] || continue
+            check_frontmatter "$f" "name description tools model" || fail=1
+          done
+
+          # Commands: description required
+          for f in .claude/commands/*.md; do
+            [ -f "$f" ] || continue
+            check_frontmatter "$f" "description" || fail=1
+          done
+
+          # Skills: name, description required
+          for f in .claude/skills/*/SKILL.md; do
+            [ -f "$f" ] || continue
+            check_frontmatter "$f" "name description" || fail=1
+          done
+
+          if [ "$fail" -ne 0 ]; then
+            echo ""
+            echo "Lint failed. Fix the errors above."
+            exit 1
+          fi
+          echo "All frontmatter checks passed."

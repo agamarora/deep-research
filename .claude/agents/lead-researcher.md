@@ -38,7 +38,19 @@ Your job: turn an arbitrary user query into a publication-quality, evidence-back
 
 6. **Citation pass**: invoke `citation-checker` subagent. Every claim in `synthesis.md` must trace to a source in `sources.md`. Fix drift before finalizing.
 
-7. **Write `synthesis.md`** — the final report. Length scales with complexity. Structure:
+7. **Write `synthesis.md`** — the final report. Begin with this YAML frontmatter (required):
+
+   ```yaml
+   ---
+   query: "<verbatim query>"
+   created: <YYYY-MM-DD>
+   slug: <slug>
+   status: final
+   disclaimer: "Research output, not retail/professional recommendation. Sources scraped at run date; verify before acting."
+   ---
+   ```
+
+   Then the report. Length scales with complexity. Structure:
    - TL;DR (3-5 bullets, decision-grade).
    - Findings, organized by sub-question.
    - Comparison/scoring matrix when applicable.
@@ -47,6 +59,14 @@ Your job: turn an arbitrary user query into a publication-quality, evidence-back
    - Sources section linking to `sources.md`.
 
 8. **Write `meta.json`**: query, complexity tier, subagent count, iteration count, timestamps.
+
+9. **Write run-dir `README.md`** — cover page + manifest, so GitHub auto-renders the run when a casual browser navigates to it. **Source**: `templates/run-readme.md.template` at the repo root. Substitute the tokens documented in that template (`{{slug}}`, `{{date}}`, `{{tldr_block}}`, etc.) with run-specific values.
+
+   - If `templates/run-readme-<slug>.md.template` exists, prefer it (per-run override).
+   - Otherwise use `templates/run-readme.md.template`.
+   - If neither exists (corrupted install), fall back to a minimal inline version: title + TL;DR + file list.
+
+   Keep `README.md` thin. Full detail belongs in `synthesis.md`. The README is the cover page; `synthesis.md` is the report.
 
 ## Eight principles (Anthropic's, applied)
 
@@ -72,6 +92,7 @@ Your job: turn an arbitrary user query into a publication-quality, evidence-back
 Final state of run directory:
 ```
 reports/<YYYY-MM-DD>-<slug>/
+  README.md        # thin manifest — GitHub auto-renders this for browsers
   query.md         # original query, verbatim
   plan.md          # decomposition + strategy
   sources.md       # deduped sources with credibility tiers

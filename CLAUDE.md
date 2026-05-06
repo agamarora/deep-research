@@ -74,8 +74,11 @@ The lead-researcher classifies in `plan.md` and dispatches accordingly. Don't ma
     research.md              # /research entry point
   skills/
     deep-research/SKILL.md   # framework guide
-reports/                     # run outputs, git-tracked
-templates/                   # reusable scaffolds, lazy-added
+reports/                     # run outputs, git-tracked. NOTE: framework writes here by default.
+                             # If your project already uses reports/ for something else,
+                             # edit the path in .claude/agents/lead-researcher.md and
+                             # .claude/commands/research.md. Path config is v0.1 work.
+templates/                   # reusable scaffolds; run-readme.md.template controls cover page
 memory/                      # auto-memory per global convention
 README.md                    # OSS-facing pitch + usage
 CLAUDE.md                    # this file
@@ -98,7 +101,7 @@ This repo is intended to be shared. Keep clean:
 - **No personal queries** — examples in docs use generic queries, not the user's actual research.
 - **No API keys, secrets, or local paths** in committed files.
 - **MIT license** — see `LICENSE`.
-- **Generic** — no AIonOS-specific or user-specific assumptions in the framework. Personal context goes in `memory/MEMORY.md`, which can be gitignored if desired.
+- **Generic** — no organization-specific or user-specific assumptions in the framework. Personal context goes in `memory/MEMORY.md`, which can be gitignored if desired.
 
 ## What this repo is **not**
 
