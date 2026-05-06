@@ -1,0 +1,31 @@
+# Local Claude Code state
+.claude/settings.local.json
+
+# Local-only memory (uncomment if you want to keep your memory private when sharing the framework)
+# memory/
+
+# OS junk
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+
+# Node / Python (in case templates ever need either)
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Logs
+*.log
