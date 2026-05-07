@@ -8,6 +8,8 @@
 
 ![demo](assets/demo.gif)
 
+<sub>One `/research` run on "budget Linux laptop in India under ₹70k". 8 parallel subagents, 136 sources triangulated, 58 atomic claims, 7 cross-source disagreements surfaced and reconciled. The critic caught SKU/RAM-cap drift in 2 of 5 recommendations and forced a v2; every claim then gated through a citation audit. Full run committed at [`examples/sample-run-budget-laptop-india/`](examples/sample-run-budget-laptop-india/).</sub>
+
 > Type `/research <query>` in any Claude Code project. Get a publication-quality, evidence-backed report at `reports/<date>-<slug>/synthesis.md` — typically 5-10 minutes later. Plan → parallel subagents → synthesis → adversarial critic → citation audit.
 
 ### What makes this different
