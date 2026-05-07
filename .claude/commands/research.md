@@ -31,14 +31,14 @@ slug: <slug>
 
 ## Step 2 — hand off to the lead researcher
 
-Invoke the `lead-researcher` subagent via the `Agent` tool. Pass it:
+Invoke the `dr-lead-researcher` subagent via the `Agent` tool. Pass it:
 
 - The verbatim query.
 - The absolute run directory path.
 - A note that the run directory is bootstrapped — start with the planning phase.
 - Reminder: **search backends are limited to `WebSearch` and `WebFetch`. No external APIs.**
 
-The lead researcher will plan, dispatch parallel subagent-researchers, synthesize, run critic + citation passes, and finalize `synthesis.md`.
+The lead researcher will plan, dispatch parallel `dr-subagent-researcher` workers, synthesize, run `dr-critic` + `dr-citation-checker` passes, and finalize `synthesis.md`.
 
 ## Step 3 — surface the result
 

@@ -36,16 +36,16 @@ User
 /research command (bootstrap run dir)
   │
   ▼
-lead-researcher (Opus)        ← plans, decomposes, synthesizes
+dr-lead-researcher (Opus)     ← plans, decomposes, synthesizes
   │
-  ├── Agent → subagent-researcher (Sonnet)  ← runs sub-question 1
-  ├── Agent → subagent-researcher (Sonnet)  ← runs sub-question 2     [parallel]
-  ├── Agent → subagent-researcher (Sonnet)  ← runs sub-question 3
+  ├── Agent → dr-subagent-researcher (Sonnet)  ← runs sub-question 1
+  ├── Agent → dr-subagent-researcher (Sonnet)  ← runs sub-question 2  [parallel]
+  ├── Agent → dr-subagent-researcher (Sonnet)  ← runs sub-question 3
   │
   ▼ (synthesize draft)
   │
-  ├── Agent → critic (Sonnet)            ← adversarial audit
-  └── Agent → citation-checker (Haiku)   ← claim→source verification
+  ├── Agent → dr-critic (Sonnet)            ← adversarial audit
+  └── Agent → dr-citation-checker (Haiku)   ← claim→source verification
   │
   ▼
 synthesis.md + audit.md

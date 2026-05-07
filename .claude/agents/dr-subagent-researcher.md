@@ -1,5 +1,5 @@
 ---
-name: subagent-researcher
+name: dr-subagent-researcher
 description: Worker agent that researches a single self-contained sub-question and returns structured notes. Spawned in parallel by lead-researcher. Use whenever a focused investigation of one slice of a larger question is needed — never for orchestration or synthesis.
 tools: WebSearch, WebFetch, Read, Write, Glob, Grep
 model: sonnet

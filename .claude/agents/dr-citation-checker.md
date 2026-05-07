@@ -1,5 +1,5 @@
 ---
-name: citation-checker
+name: dr-citation-checker
 description: Verifies every claim in synthesis.md traces to a source in sources.md. Flags orphan claims, broken references, and citation drift. Use as the last gate before a deep-research run is finalized.
 tools: Read, Write, Glob, Grep, WebFetch
 model: haiku

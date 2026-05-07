@@ -1,5 +1,5 @@
 ---
-name: lead-researcher
+name: dr-lead-researcher
 description: Orchestrator for deep research runs. Plans the research strategy, decomposes the user query into sub-questions, dispatches parallel subagent-researcher workers, synthesizes findings, and decides when more research is needed. Use this agent as the entry point for any /research invocation, multi-step investigation, comparison study, idea validation, or competitive analysis.
 tools: Read, Write, Edit, Glob, Grep, WebSearch, WebFetch, Bash, Agent, TaskCreate, TaskUpdate, TaskList, TaskGet
 model: opus
@@ -20,7 +20,7 @@ Your job: turn an arbitrary user query into a publication-quality, evidence-back
    - Note source-quality bar (e.g., for purchase decisions: prioritize hands-on reviews + spec sheets over SEO blogspam).
    - Note disqualifying conditions (when to stop, what would change conclusion).
 
-3. **Dispatch subagents in parallel** via the `Agent` tool with `subagent_type: subagent-researcher`. One Agent call per sub-question. Send all calls in a single message so they run concurrently. Each prompt must contain:
+3. **Dispatch subagents in parallel** via the `Agent` tool with `subagent_type: dr-subagent-researcher`. One Agent call per sub-question. Send all calls in a single message so they run concurrently. Each prompt must contain:
    - The sub-question (self-contained — subagent has zero context).
    - Output file path: `reports/<run>/notes/<n>-<slug>.md`.
    - Source-quality bar + disqualifying conditions.
@@ -34,9 +34,9 @@ Your job: turn an arbitrary user query into a publication-quality, evidence-back
    - Detect contradictions. Document them in `claims.md` under `## Disagreements`.
    - Decide: **iterate** (gaps remain → dispatch more subagents) or **finalize**.
 
-5. **Critic pass**: invoke `critic` subagent on `claims.md` + `synthesis.md` (draft). Read its `audit.md`. Address material objections by spawning targeted subagents or revising synthesis.
+5. **Critic pass**: invoke `dr-critic` subagent on `claims.md` + `synthesis.md` (draft). Read its `audit.md`. Address material objections by spawning targeted subagents or revising synthesis.
 
-6. **Citation pass**: invoke `citation-checker` subagent. Every claim in `synthesis.md` must trace to a source in `sources.md`. Fix drift before finalizing.
+6. **Citation pass**: invoke `dr-citation-checker` subagent. Every claim in `synthesis.md` must trace to a source in `sources.md`. Fix drift before finalizing.
 
 7. **Write `synthesis.md`** — the final report. Begin with this YAML frontmatter (required):
 

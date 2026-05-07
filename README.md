@@ -6,25 +6,61 @@ A drop-in framework that turns any Claude Code project into a publication-qualit
 
 Inspired by [Anthropic's published multi-agent research architecture](https://www.anthropic.com/engineering/multi-agent-research-system) (Opus lead + Sonnet subagents, 90.2% better than single-agent on internal evals).
 
-## Install
+## Install — 30 seconds
+
+**Requirements:** [Claude Code](https://docs.anthropic.com/en/docs/claude-code), [Git](https://git-scm.com/), [Node.js](https://nodejs.org/) (Claude Code already requires it).
+
+Open Claude Code and paste this. Claude does the rest:
+
+> Install deep-research: run `git clone --single-branch --depth 1 https://github.com/agamarora/deep-research.git ~/.claude/skills/deep-research && cd ~/.claude/skills/deep-research && node setup.mjs` — then tell me to open a new project session and type `/research`.
+
+Or run it yourself:
 
 ```bash
-git clone https://github.com/agamarora/deep-research.git
-cp -r deep-research/.claude    /your/project/
-cp -r deep-research/templates  /your/project/
+git clone --single-branch --depth 1 https://github.com/agamarora/deep-research.git ~/.claude/skills/deep-research
+cd ~/.claude/skills/deep-research
+node setup.mjs
 ```
 
-That's it. Open your project in Claude Code, type `/research`.
+### What gets created on disk
 
-## Use
+- `~/.claude/skills/deep-research/` — the cloned repo (skill + source of truth)
+- `~/.claude/agents/dr-lead-researcher.md` — orchestrator (Opus)
+- `~/.claude/agents/dr-dr-subagent-researcher.md` — parallel worker (Sonnet)
+- `~/.claude/agents/dr-critic.md` — adversarial review (Sonnet)
+- `~/.claude/agents/dr-citation-checker.md` — claim→source audit (Haiku)
+- `~/.claude/commands/research.md` — the `/research` slash command
+- `~/.deep-research/version` — installed commit hash
+
+Each managed file carries a `<!-- managed by deep-research v<commit> sha:<hash> -->` header so re-runs of `setup.mjs` skip already-current files and back up edits before overwriting.
+
+### Use
+
+Open a new Claude Code session in any project, then:
 
 ```
 /research competitive landscape of OSS multi-agent frameworks in 2026
 ```
 
-The `lead-researcher` subagent plans the work, dispatches parallel `subagent-researcher` workers, synthesizes a draft, runs `critic` for adversarial review, then `citation-checker` to verify every claim. Output lands at `reports/<YYYY-MM-DD>-<slug>/` with a cover-page `README.md` GitHub auto-renders.
+The `dr-lead-researcher` subagent plans the work, dispatches parallel `dr-dr-subagent-researcher` workers, synthesizes a draft, runs `dr-critic` for adversarial review, then `dr-citation-checker` to verify every claim. Output lands at `reports/<YYYY-MM-DD>-<slug>/` with a cover-page `README.md` GitHub auto-renders.
 
-> `reports/` is **gitignored by default in this repo** — research output is your own; track or ignore it in your own project as you see fit.
+> Research output is yours. Track `reports/` in your project repo or keep it local — your call.
+
+### Upgrade
+
+```bash
+cd ~/.claude/skills/deep-research && git pull && node setup.mjs
+```
+
+`setup.mjs` is idempotent: up-to-date files are skipped; upstream changes overwrite (with `.bak` backup); files you've edited locally are flagged and skipped unless you pass `--force`.
+
+### Uninstall
+
+```bash
+node ~/.claude/skills/deep-research/bin/deep-research-uninstall.mjs
+```
+
+Removes only files carrying the deep-research marker. Leaves your own `~/.claude/commands/research.md` (or anything you authored) untouched. Pass `--force` to remove unmarked files anyway. See `--help` for `--keep-state` / `--keep-repo`.
 
 ---
 
@@ -34,7 +70,7 @@ The `lead-researcher` subagent plans the work, dispatches parallel `subagent-res
 - **No API keys**: deliberately built around bundled tools. No friction, no signup, no monthly limits.
 - **Persistent**: every run is a structured directory you git-track and revisit.
 - **Modular, not bloated**: one slash command, four subagents, one skill. Adapts to query complexity automatically.
-- **Open-source-friendly**: drop the `.claude/` directory into any project to enable.
+- **Open-source-friendly**: install once globally; works in every project.
 
 ## Architecture
 
@@ -45,14 +81,14 @@ User
 /research <query>           ← bootstraps reports/<date>-<slug>/
   │
   ▼
-lead-researcher             ← Opus. Plans, decomposes, synthesizes.
+dr-lead-researcher          ← Opus. Plans, decomposes, synthesizes.
   │
-  ├─ subagent-researcher    ┐
-  ├─ subagent-researcher    ├─ Sonnet. Parallel. One per sub-question.
-  └─ subagent-researcher    ┘
+  ├─ dr-subagent-researcher  ┐
+  ├─ dr-subagent-researcher  ├─ Sonnet. Parallel. One per sub-question.
+  └─ dr-subagent-researcher  ┘
   │
-  ├─ critic                 ← Sonnet. Adversarial review.
-  └─ citation-checker       ← Haiku. Claim→source verification.
+  ├─ dr-critic              ← Sonnet. Adversarial review.
+  └─ dr-citation-checker    ← Haiku. Claim→source verification.
   │
   ▼
 synthesis.md  +  audit.md  +  sources.md  +  claims.md  +  README.md
@@ -79,7 +115,7 @@ Customize the cover-page template at `templates/run-readme.md.template`.
 
 ## Scaling
 
-The lead-researcher classifies query complexity and scales accordingly:
+`dr-lead-researcher` classifies query complexity and scales accordingly:
 
 | Complexity        | Agents  | Tool calls / agent |
 |-------------------|---------|--------------------|
@@ -92,7 +128,7 @@ A complex run uses ~15× the tokens of normal chat. Don't `/research` "what's to
 ## FAQ
 
 **Q: I already have a `reports/` directory in my project for something else.**
-By default this framework writes to `reports/<date>-<slug>/`. Two ways to handle the collision: (a) move your existing `reports/` to a different name, or (b) edit the run path in `.claude/agents/lead-researcher.md` and `.claude/commands/research.md`. A path-config option is on the v0.1 roadmap.
+By default this framework writes to `reports/<date>-<slug>/`. Two ways to handle the collision: (a) move your existing `reports/` to a different name, or (b) edit the run path in your installed `~/.claude/agents/dr-lead-researcher.md` and `~/.claude/commands/research.md` (changes will be flagged on next `setup.mjs` re-run; pass `--force` to keep them). A path-config option is on the v0.3 roadmap.
 
 **Q: Do I need an API key for anything?**
 No. The framework uses Claude Code's bundled `WebSearch` and `WebFetch`. No Tavily, no Firecrawl, no Exa. No external account.
@@ -105,7 +141,10 @@ Yes, in your fork. The base framework deliberately doesn't, because the install 
 - **langchain open_deep_research**: LangGraph-based, requires LangSmith config and API keys. Much heavier setup.
 - **Defiect's plugin**: more sophisticated evidence-graph machinery, comparable architecture, but slightly different emphasis.
 
-This framework's edge is install simplicity (clone + copy + `/research`) and the no-API-key constraint that flows from it.
+This framework's edge is install simplicity (paste one line, type `/research`) and the no-API-key constraint that flows from it.
+
+**Q: What if Anthropic ships a first-party deep-research feature or official plugin spec?**
+Then this framework adopts whichever path Anthropic publishes. The orchestrator-subagents pattern is portable — agents and the slash command are plain markdown. Until then, this is the path.
 
 **Q: Are reports tracked in this repo?**
 No. `reports/` is gitignored in this framework repo. In your own project that installs the framework, you choose: tracked (search + revisit, research compounds) or local-only (privacy, smaller repo). If you want to track, remove the `reports/` line from your `.gitignore` after installing.

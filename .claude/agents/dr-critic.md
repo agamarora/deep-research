@@ -1,5 +1,5 @@
 ---
-name: critic
+name: dr-critic
 description: Adversarial reviewer for draft research synthesis. Looks for unsupported claims, weak sourcing, missed angles, logical gaps, and motivated reasoning. Use after the lead-researcher produces a draft synthesis.md and before finalizing the run.
 tools: Read, Write, Glob, Grep, WebSearch, WebFetch
 model: sonnet

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this repo is
 
-A **Claude-Code-native deep-research framework**. The user runs deep research (buy decisions, idea validation, competitive analysis, brainstorming, etc.) by invoking `/research <query>`. A lead-researcher subagent plans the work, dispatches parallel subagent-researchers, then runs critic + citation-checker passes before finalizing. All artifacts persist to `reports/<YYYY-MM-DD>-<slug>/`.
+A **Claude-Code-native deep-research framework**. The user runs deep research (buy decisions, idea validation, competitive analysis, brainstorming, etc.) by invoking `/research <query>`. A dr-lead-researcher subagent plans the work, dispatches parallel dr-subagent-researchers, then runs critic + dr-citation-checker passes before finalizing. All artifacts persist to `reports/<YYYY-MM-DD>-<slug>/`.
 
 The framework is designed to be open-sourceable to other Claude Code users, so keep the design generic, the dependencies minimal, and the user-specific config out of committed files.
 
@@ -14,7 +14,7 @@ When the user asks to research, investigate, compare, validate an idea, or do co
 
 1. **Confirm scope if ambiguous** — for "research laptops" ask use case, budget, OS, etc. before invoking. Skip the question if the query is already specific.
 2. **Invoke `/research <query>`** — this is the single entry point. Do not bypass it.
-3. The command bootstraps `reports/<YYYY-MM-DD>-<slug>/`, then hands off to the `lead-researcher` subagent (Opus). The lead handles planning, parallel dispatch, synthesis, critic, citation check.
+3. The command bootstraps `reports/<YYYY-MM-DD>-<slug>/`, then hands off to the `dr-lead-researcher` subagent (Opus). The lead handles planning, parallel dispatch, synthesis, critic, citation check.
 4. When the lead returns, surface: run dir path, TL;DR from `synthesis.md`, audit verdict, what to read next.
 
 For trivial questions answerable from training data or a single search, **answer directly**. Don't burn 15× tokens on `/research` for "what's today's date."
@@ -22,14 +22,14 @@ For trivial questions answerable from training data or a single search, **answer
 ## Architecture
 
 ```
-User → /research → lead-researcher (Opus)
+User → /research → dr-lead-researcher (Opus)
                        │
-                       ├─ Agent ─→ subagent-researcher (Sonnet)   ┐
-                       ├─ Agent ─→ subagent-researcher (Sonnet)   │ parallel
-                       └─ Agent ─→ subagent-researcher (Sonnet)   ┘
+                       ├─ Agent ─→ dr-subagent-researcher (Sonnet)   ┐
+                       ├─ Agent ─→ dr-subagent-researcher (Sonnet)   │ parallel
+                       └─ Agent ─→ dr-subagent-researcher (Sonnet)   ┘
                        │
-                       ├─ Agent ─→ critic (Sonnet)
-                       └─ Agent ─→ citation-checker (Haiku)
+                       ├─ Agent ─→ dr-critic (Sonnet)
+                       └─ Agent ─→ dr-citation-checker (Haiku)
                        │
                        ▼
                   synthesis.md
@@ -59,17 +59,17 @@ Subagents live in `.claude/agents/`. Skill in `.claude/skills/deep-research/`. S
 | Direct comparison | 2-4 | 10-15 |
 | Complex research | 5-10+ | 10-15 |
 
-The lead-researcher classifies in `plan.md` and dispatches accordingly. Don't manually override unless the user explicitly says so.
+The dr-lead-researcher classifies in `plan.md` and dispatches accordingly. Don't manually override unless the user explicitly says so.
 
 ## Repo layout
 
 ```
 .claude/
   agents/
-    lead-researcher.md       # orchestrator (Opus)
-    subagent-researcher.md   # parallel worker (Sonnet)
-    critic.md                # adversarial reviewer (Sonnet)
-    citation-checker.md      # claim→source auditor (Haiku)
+    dr-lead-researcher.md       # orchestrator (Opus)
+    dr-subagent-researcher.md   # parallel worker (Sonnet)
+    dr-critic.md             # adversarial reviewer (Sonnet)
+    dr-citation-checker.md      # claim→source auditor (Haiku)
   commands/
     research.md              # /research entry point
   skills/
@@ -77,8 +77,8 @@ The lead-researcher classifies in `plan.md` and dispatches accordingly. Don't ma
 reports/                     # run outputs. GITIGNORED in this framework repo.
                              # In your own project: untrack or commit per your preference.
                              # If you already use reports/ for something else, edit the path
-                             # in .claude/agents/lead-researcher.md and .claude/commands/research.md.
-                             # Path config goes to v0.1.
+                             # in .claude/agents/dr-lead-researcher.md and .claude/commands/research.md.
+                             # Path config deferred to v0.3.
 templates/                   # reusable scaffolds; run-readme.md.template controls cover page
 memory/                      # auto-memory per global convention
 README.md                    # OSS-facing pitch + usage
@@ -87,13 +87,13 @@ CLAUDE.md                    # this file
 
 ## Adding new patterns
 
-User preference: **fewer patterns = more intuitive**. Resist the urge to add a new slash command per use case. The single `/research` entry handles buy decisions, idea validation, comp analysis, brainstorming, etc. — the lead-researcher classifies and adapts.
+User preference: **fewer patterns = more intuitive**. Resist the urge to add a new slash command per use case. The single `/research` entry handles buy decisions, idea validation, comp analysis, brainstorming, etc. — the dr-lead-researcher classifies and adapts.
 
 Add a new command **only** when:
 1. A pattern is invoked ≥3 times manually with the same shape.
 2. The pattern materially differs from generic deep research (e.g., needs a fixed output schema, different scaling rules, or a non-research workflow).
 
-Otherwise, codify reusable patterns as templates under `templates/` and reference them from the lead-researcher's plan when relevant.
+Otherwise, codify reusable patterns as templates under `templates/` and reference them from the dr-lead-researcher's plan when relevant.
 
 ## Open-source readiness
 
