@@ -16,7 +16,7 @@ Inspired by [Anthropic's published multi-agent research architecture](https://ww
 
 Open Claude Code and paste this. Claude does the rest:
 
-> Install deep-research: run `git clone --single-branch --depth 1 https://github.com/agamarora/deep-research.git ~/.claude/skills/deep-research && cd ~/.claude/skills/deep-research && node setup.mjs` — then I can use `/research <query>` immediately. (Restart Claude Code for full-speed isolated subagent dispatch; the framework works either way via a fallback path.)
+> Install deep-research: run `git clone --single-branch --depth 1 https://github.com/agamarora/deep-research.git ~/.claude/skills/deep-research && cd ~/.claude/skills/deep-research && node setup.mjs` — then I can use `/research <query>` immediately. (Restart Claude Code afterward to load the worker subagents natively; the framework works either way via a fallback path.)
 
 Or run it yourself:
 
@@ -47,7 +47,7 @@ In any Claude Code project, type:
 
 Your main Claude Code session plays the orchestrator role: plan, dispatch parallel `dr-subagent-researcher` workers, synthesize a draft, then run `dr-critic` for adversarial review and `dr-citation-checker` to verify every claim. Output lands at `reports/<YYYY-MM-DD>-<slug>/` with a cover-page `README.md` GitHub auto-renders.
 
-> **Mid-session install?** Slash commands hot-reload, but Claude Code's `subagent_type` enum freezes at session start. v0.2.1+ handles this with a fallback path: if the `dr-*` agents aren't registered yet, dispatch falls back to `general-purpose` with the role prompt prepended. `synthesis.md` carries `dispatch_mode: fallback` and a soft notice. Restart for native isolated dispatch on future runs — output quality is unaffected either way.
+> **Mid-session install?** `/research` works immediately — the slash command is the orchestrator and slash commands hot-reload. The worker subagents (`dr-subagent-researcher`, `dr-critic`, `dr-citation-checker`) need a session restart to register in Claude Code's `subagent_type` enum. Until then they fall back to `general-purpose` with their role prompt prepended; `synthesis.md` carries `dispatch_mode: fallback` and a soft notice. Output quality is unaffected.
 
 > Research output is yours. Track `reports/` in your project repo or keep it local — your call.
 
@@ -83,7 +83,7 @@ Removes only files carrying the deep-research marker. Leaves your own `~/.claude
 - **Native**: pure Claude Code primitives. Subagents, slash commands, skills. Zero external dependencies.
 - **No API keys**: deliberately built around bundled tools. No friction, no signup, no monthly limits.
 - **Persistent**: every run is a structured directory you git-track and revisit.
-- **Modular, not bloated**: one slash command, four subagents, one skill. Adapts to query complexity automatically.
+- **Modular, not bloated**: one slash command, three worker subagents, one skill. Adapts to query complexity automatically.
 - **Open-source-friendly**: install once globally; works in every project.
 
 ## Architecture
@@ -182,7 +182,7 @@ A complex run can use ~15× the tokens of a normal chat. `/research` is for ques
 
 - [Latest release](https://github.com/agamarora/deep-research/releases/latest) on GitHub
 - [`CHANGELOG.md`](CHANGELOG.md) — full version history
-- Pin a specific version: `git clone --branch v0.2.0 --depth 1 https://github.com/agamarora/deep-research.git ~/.claude/skills/deep-research`
+- Pin a specific version: `git clone --branch v0.2.2 --depth 1 https://github.com/agamarora/deep-research.git ~/.claude/skills/deep-research`
 
 ## Contributing
 
