@@ -26,7 +26,7 @@ node setup.mjs
 
 - `~/.claude/skills/deep-research/` — the cloned repo (skill + source of truth)
 - `~/.claude/agents/dr-lead-researcher.md` — orchestrator (Opus)
-- `~/.claude/agents/dr-dr-subagent-researcher.md` — parallel worker (Sonnet)
+- `~/.claude/agents/dr-subagent-researcher.md` — parallel worker (Sonnet)
 - `~/.claude/agents/dr-critic.md` — adversarial review (Sonnet)
 - `~/.claude/agents/dr-citation-checker.md` — claim→source audit (Haiku)
 - `~/.claude/commands/research.md` — the `/research` slash command
@@ -42,9 +42,15 @@ Open a new Claude Code session in any project, then:
 /research competitive landscape of OSS multi-agent frameworks in 2026
 ```
 
-The `dr-lead-researcher` subagent plans the work, dispatches parallel `dr-dr-subagent-researcher` workers, synthesizes a draft, runs `dr-critic` for adversarial review, then `dr-citation-checker` to verify every claim. Output lands at `reports/<YYYY-MM-DD>-<slug>/` with a cover-page `README.md` GitHub auto-renders.
+The `dr-lead-researcher` subagent plans the work, dispatches parallel `dr-subagent-researcher` workers, synthesizes a draft, runs `dr-critic` for adversarial review, then `dr-citation-checker` to verify every claim. Output lands at `reports/<YYYY-MM-DD>-<slug>/` with a cover-page `README.md` GitHub auto-renders.
 
 > Research output is yours. Track `reports/` in your project repo or keep it local — your call.
+
+### What does the output look like?
+
+See [`examples/sample-run-budget-laptop-india/`](examples/sample-run-budget-laptop-india/) — a real run with 8 subagents, 136 sources, 58 claims, and a critic-reviewed synthesis.
+
+[`synthesis.md`](examples/sample-run-budget-laptop-india/synthesis.md) is the final report; [`audit.md`](examples/sample-run-budget-laptop-india/audit.md) shows what the critic caught and fixed.
 
 ### Upgrade
 

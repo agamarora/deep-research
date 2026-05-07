@@ -1,0 +1,38 @@
+{
+  "query": "Budget laptop in India for dev work — expandable RAM to 32GB, no dedicated GPU, Linux-friendly, 14\"+ no numpad, 16:10 preferred, FHD+, Intel or AMD",
+  "slug": "budget-laptop-india-linux-dev",
+  "created": "2026-05-06",
+  "completed": "2026-05-06",
+  "complexity": "comparison",
+  "subagents_dispatched": {
+    "round_1_research": 4,
+    "round_2_critic": 1,
+    "round_2_citation": 1,
+    "round_3_fixup": 2,
+    "total": 8
+  },
+  "iterations": 2,
+  "audit_verdict_v1": "revise",
+  "audit_verdict_citation_v1": "pass",
+  "status": "completed",
+  "framework_version": "v0",
+  "session_mode": "hand-piloted-dogfood",
+  "outputs": {
+    "synthesis_v1": "synthesis-v1.md",
+    "synthesis_final": "synthesis.md",
+    "audit": "audit.md",
+    "claims": "claims.md",
+    "sources": "sources.md",
+    "notes": [
+      "notes/1-cpu-recommendation.md",
+      "notes/2-ram-ssd-upgradability.md",
+      "notes/3-linux-compat.md",
+      "notes/4-india-market-form-factor.md",
+      "notes/5-sku-corrections.md",
+      "notes/6-coverage-gaps.md"
+    ]
+  },
+  "source_count": 136,
+  "claim_count": 58,
+  "disagreement_count": 7
+}
