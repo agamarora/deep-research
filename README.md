@@ -2,7 +2,11 @@
 
 **Multi-agent deep research for Claude Code. Zero API keys.**
 
-A drop-in framework that turns any Claude Code project into a publication-quality research engine. Plan → parallel subagents → synthesis → adversarial critic → citation audit. Native `WebSearch` and `WebFetch` only. No Tavily, no Firecrawl, no Exa, no MCP search servers.
+[![Latest release](https://img.shields.io/github/v/release/agamarora/deep-research?label=release&color=blue)](https://github.com/agamarora/deep-research/releases/latest)
+[![License](https://img.shields.io/github/license/agamarora/deep-research?color=blue)](LICENSE)
+[![Claude Code](https://img.shields.io/badge/Claude%20Code-native-orange)](https://docs.anthropic.com/en/docs/claude-code)
+
+A framework that turns any Claude Code project into a publication-quality research engine. Plan → parallel subagents → synthesis → adversarial critic → citation audit. Native `WebSearch` and `WebFetch` only. No Tavily, no Firecrawl, no Exa, no MCP search servers.
 
 Inspired by [Anthropic's published multi-agent research architecture](https://www.anthropic.com/engineering/multi-agent-research-system) (Opus lead + Sonnet subagents, 90.2% better than single-agent on internal evals).
 
@@ -169,6 +173,12 @@ No. `reports/` is gitignored in this framework repo. In your own project that in
 ## Token cost
 
 A complex run can use ~15× the tokens of a normal chat. `/research` is for questions that warrant the depth.
+
+## Releases & changelog
+
+- [Latest release](https://github.com/agamarora/deep-research/releases/latest) on GitHub
+- [`CHANGELOG.md`](CHANGELOG.md) — full version history
+- Pin a specific version: `git clone --branch v0.2.0 --depth 1 https://github.com/agamarora/deep-research.git ~/.claude/skills/deep-research`
 
 ## Contributing
 
