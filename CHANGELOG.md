@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## Unreleased
 
+### Fixed (v0.2.1 — autocomplete description rendering)
+
+- **Marker injected after YAML frontmatter, not before.** Pre-v0.2.1 wrote `<!-- managed by deep-research ... -->` at the top of every managed file, which broke Claude Code's frontmatter parser. Result: slash-command and skill autocomplete showed the marker comment as the description (e.g., `/research <!-- managed by deep-research ... -->`) instead of the real description text. v0.2.1 detects YAML frontmatter and inserts the marker between the closing `---` and the body.
+- **One-time migration**: `setup.mjs` now flags any pre-v0.2.1 install (marker positioned before frontmatter) as stale and upgrades it even when the body SHA is unchanged. `.bak` files are written for every migrated file. Re-run `git pull && node setup.mjs` to apply.
+
+### Added (v0.2.1 — robustness: try-fallback dispatch wrapper)
+
+- **Try-fallback wrapper around every `Agent` dispatch.** Claude Code's `subagent_type` enum is session-frozen — installing the framework mid-session registers the slash command and skill but not the `dr-*` subagents. Pre-v0.2.1 this surfaced as a raw `Agent type 'dr-lead-researcher' not found` error. Now: every dispatch checks the enum, and if the target `dr-*` agent isn't registered, falls back to `subagent_type: general-purpose` with the role definition (read from `~/.claude/agents/dr-<name>.md`, frontmatter stripped) prepended to the task prompt. Native path is preferred when available; fallback is functionally equivalent (general-purpose has every tool the `dr-*` agents need).
+- **`dispatch_mode` field** in `meta.json` and `synthesis.md` frontmatter — `"native"` or `"fallback"` so runs are self-describing.
+- **Soft notice in `synthesis.md` TL;DR** when fallback path was used: a one-line italic note recommending a restart for native dispatch on future runs. Output quality is unaffected.
+- **Robustness side-effects**: also covers forked `dr-*` names, partial installs, registry quirks, and upgrades that introduce new agents the user's session predates.
+
+### Changed (v0.2.1)
+
+- **Install copy softened**: README and `setup.mjs` banner no longer instruct users to "open a new session". Now: "type `/research` immediately; restart for full-speed isolated dispatch — works either way." First-run UX is no longer paying for an architectural quirk.
+
 ### Changed (v0.2.0 — distribution overhaul)
 
 - **One-paste install** — `git clone ... ~/.claude/skills/deep-research && node setup.mjs` puts the framework in your global Claude Code config; `/research` works in every project.

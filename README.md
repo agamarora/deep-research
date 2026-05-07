@@ -16,7 +16,7 @@ Inspired by [Anthropic's published multi-agent research architecture](https://ww
 
 Open Claude Code and paste this. Claude does the rest:
 
-> Install deep-research: run `git clone --single-branch --depth 1 https://github.com/agamarora/deep-research.git ~/.claude/skills/deep-research && cd ~/.claude/skills/deep-research && node setup.mjs` — then tell me to open a new project session and type `/research`.
+> Install deep-research: run `git clone --single-branch --depth 1 https://github.com/agamarora/deep-research.git ~/.claude/skills/deep-research && cd ~/.claude/skills/deep-research && node setup.mjs` — then I can use `/research <query>` immediately. (Restart Claude Code for full-speed isolated subagent dispatch; the framework works either way via a fallback path.)
 
 Or run it yourself:
 
@@ -40,13 +40,15 @@ Each managed file carries a `<!-- managed by deep-research v<commit> sha:<hash> 
 
 ### Use
 
-Open a new Claude Code session in any project, then:
+In any Claude Code project, type:
 
 ```
 /research competitive landscape of OSS multi-agent frameworks in 2026
 ```
 
 The `dr-lead-researcher` subagent plans the work, dispatches parallel `dr-subagent-researcher` workers, synthesizes a draft, runs `dr-critic` for adversarial review, then `dr-citation-checker` to verify every claim. Output lands at `reports/<YYYY-MM-DD>-<slug>/` with a cover-page `README.md` GitHub auto-renders.
+
+> **Mid-session install?** Slash commands hot-reload, but Claude Code's `subagent_type` enum freezes at session start. v0.2.1+ handles this with a fallback path: if the `dr-*` agents aren't registered yet, dispatch falls back to `general-purpose` with the role prompt prepended. `synthesis.md` carries `dispatch_mode: fallback` and a soft notice. Restart for native isolated dispatch on future runs — output quality is unaffected either way.
 
 > Research output is yours. Track `reports/` in your project repo or keep it local — your call.
 

@@ -20,7 +20,30 @@ Your job: turn an arbitrary user query into a publication-quality, evidence-back
    - Note source-quality bar (e.g., for purchase decisions: prioritize hands-on reviews + spec sheets over SEO blogspam).
    - Note disqualifying conditions (when to stop, what would change conclusion).
 
-3. **Dispatch subagents in parallel** via the `Agent` tool with `subagent_type: dr-subagent-researcher`. One Agent call per sub-question. Send all calls in a single message so they run concurrently. Each prompt must contain:
+3. **Dispatch subagents in parallel** via the `Agent` tool. One Agent call per sub-question. Send all calls in a single message so they run concurrently.
+
+   **Dispatch contract** (try-fallback — applies to every dispatch in this run, including critic and citation-checker below):
+
+   - **Native path**: if `dr-subagent-researcher` is in your available `subagent_type` enum, dispatch with `subagent_type: dr-subagent-researcher`.
+   - **Fallback path**: if `dr-subagent-researcher` is not in your enum (subagent registry didn't reload after install, you were dispatched as general-purpose yourself, or names were forked):
+     - `Read` `~/.claude/agents/dr-subagent-researcher.md` (Windows: `C:\Users\<user>\.claude\agents\dr-subagent-researcher.md`).
+     - Strip YAML frontmatter (everything between the leading `---` markers).
+     - Dispatch with `subagent_type: general-purpose` and a task prompt that begins:
+       ```
+       ROLE DEFINITION (you are dr-subagent-researcher, dispatched via fallback path):
+
+       <body of dr-subagent-researcher.md>
+
+       ---
+
+       TASK:
+       <the sub-question task body, as below>
+       ```
+     - Track that fallback was used for downstream meta.json + synthesis.md notice.
+
+   - **Try-on-error variant** is acceptable: dispatch native first; on a tool error containing "Agent type 'dr-subagent-researcher' not found", retry on the fallback path.
+
+   Each prompt (native or fallback task body) must contain:
    - The sub-question (self-contained — subagent has zero context).
    - Output file path: `reports/<run>/notes/<n>-<slug>.md`.
    - Source-quality bar + disqualifying conditions.
@@ -34,9 +57,9 @@ Your job: turn an arbitrary user query into a publication-quality, evidence-back
    - Detect contradictions. Document them in `claims.md` under `## Disagreements`.
    - Decide: **iterate** (gaps remain → dispatch more subagents) or **finalize**.
 
-5. **Critic pass**: invoke `dr-critic` subagent on `claims.md` + `synthesis.md` (draft). Read its `audit.md`. Address material objections by spawning targeted subagents or revising synthesis.
+5. **Critic pass**: invoke `dr-critic` subagent on `claims.md` + `synthesis.md` (draft). Apply the same try-fallback contract from step 3 (native `subagent_type: dr-critic` if available; otherwise read `~/.claude/agents/dr-critic.md`, strip frontmatter, dispatch as `general-purpose` with the role definition prepended). Read its `audit.md`. Address material objections by spawning targeted subagents or revising synthesis.
 
-6. **Citation pass**: invoke `dr-citation-checker` subagent. Every claim in `synthesis.md` must trace to a source in `sources.md`. Fix drift before finalizing.
+6. **Citation pass**: invoke `dr-citation-checker` subagent. Same try-fallback contract — native preferred, fallback to `general-purpose` with `~/.claude/agents/dr-citation-checker.md` body prepended. Every claim in `synthesis.md` must trace to a source in `sources.md`. Fix drift before finalizing.
 
 7. **Write `synthesis.md`** — the final report. Begin with this YAML frontmatter (required):
 
@@ -46,19 +69,21 @@ Your job: turn an arbitrary user query into a publication-quality, evidence-back
    created: <YYYY-MM-DD>
    slug: <slug>
    status: final
+   dispatch_mode: <native | fallback>
    disclaimer: "Research output, not retail/professional recommendation. Sources scraped at run date; verify before acting."
    ---
    ```
 
    Then the report. Length scales with complexity. Structure:
    - TL;DR (3-5 bullets, decision-grade).
+   - **If `dispatch_mode == fallback`**: prepend a one-line italic notice immediately under the TL;DR header: `*Note: dispatched via general-purpose fallback (subagent registry not loaded at session start). Restart Claude Code for native isolated dispatch on future runs — output quality unaffected.*`
    - Findings, organized by sub-question.
    - Comparison/scoring matrix when applicable.
    - Recommendation (if query is decision-shaped).
    - Open questions / what would change the answer.
    - Sources section linking to `sources.md`.
 
-8. **Write `meta.json`**: query, complexity tier, subagent count, iteration count, timestamps.
+8. **Write `meta.json`**: query, complexity tier, subagent count, iteration count, timestamps, **`dispatch_mode`** (`"native"` if all dispatches used `subagent_type: dr-*`; `"fallback"` if any used `subagent_type: general-purpose` with role-prompt prepending).
 
 9. **Write run-dir `README.md`** — cover page + manifest, so GitHub auto-renders the run when a casual browser navigates to it. **Source**: `templates/run-readme.md.template` at the repo root. Substitute the tokens documented in that template (`{{slug}}`, `{{date}}`, `{{tldr_block}}`, etc.) with run-specific values.
 

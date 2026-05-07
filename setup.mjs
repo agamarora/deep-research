@@ -77,7 +77,20 @@ const FILES = [
 const MARKER_RE = /<!--\s*managed by deep-research\s+v([a-f0-9]+)\s+sha:([a-f0-9]+)\s*-->/i;
 
 function mkMarker(srcSha) {
-  return `<!-- managed by deep-research v${COMMIT} sha:${srcSha} -->\n<!-- Edits here are clobbered on upgrade. Customize in the cloned repo: ~/.claude/skills/deep-research/${"".padEnd(0)} -->\n`;
+  return `<!-- managed by deep-research v${COMMIT} sha:${srcSha} -->\n<!-- Edits here are clobbered on upgrade. Customize in the cloned repo: ~/.claude/skills/deep-research/ -->\n`;
+}
+
+// Inject marker after YAML frontmatter (between closing `---` and body) so the
+// frontmatter still parses cleanly. If no frontmatter, prepend.
+// Pre-v0.2.1 prepended unconditionally, which made the marker comment appear
+// as the slash-command/skill description in autocomplete.
+function injectMarker(srcContent, marker) {
+  const fmMatch = srcContent.match(/^---\r?\n[\s\S]*?\r?\n---\r?\n/);
+  if (fmMatch) {
+    const fmEnd = fmMatch[0].length;
+    return srcContent.slice(0, fmEnd) + marker + srcContent.slice(fmEnd);
+  }
+  return marker + srcContent;
 }
 
 function preflight() {
@@ -104,6 +117,17 @@ function classifyTarget(dstPath, srcSha) {
   const m = cur.match(MARKER_RE);
   if (!m) return { kind: "foreign" };           // user-owned or unmanaged file
   const [, , markerSha] = m;
+
+  // v0.2.1 migration: pre-v0.2.1 wrote the marker BEFORE the YAML frontmatter,
+  // which broke Claude Code's frontmatter parser and made the marker comment
+  // appear as the autocomplete description. Detect that layout and force an
+  // upgrade even if the body sha is "current".
+  const markerPos = cur.search(MARKER_RE);
+  const fmOpenMatch = cur.match(/^---\r?\n/m);
+  if (fmOpenMatch && markerPos !== -1 && markerPos < cur.indexOf(fmOpenMatch[0])) {
+    return { kind: "stale", markerSha, reason: "marker-before-frontmatter" };
+  }
+
   if (markerSha === srcSha) return { kind: "current", markerSha };
   return { kind: "stale", markerSha };
 }
@@ -119,7 +143,7 @@ function copyOne({ src, dst }) {
   switch (cls.kind) {
     case "absent": {
       log(`  + ${dst}`);
-      if (!DRY_RUN) writeFileSync(dst, mkMarker(srcSha) + srcContent, "utf8");
+      if (!DRY_RUN) writeFileSync(dst, injectMarker(srcContent, mkMarker(srcSha)), "utf8");
       return { action: "installed" };
     }
     case "current": {
@@ -131,7 +155,7 @@ function copyOne({ src, dst }) {
       log(`  ↑ ${dst}  (upgrade; backup → ${bak})`);
       if (!DRY_RUN) {
         copyFileSync(dst, bak);
-        writeFileSync(dst, mkMarker(srcSha) + srcContent, "utf8");
+        writeFileSync(dst, injectMarker(srcContent, mkMarker(srcSha)), "utf8");
       }
       return { action: "upgraded" };
     }
@@ -183,10 +207,14 @@ function banner(results) {
   console.log("");
   if (foreign === 0 && errors === 0) {
     console.log("  Next steps:");
-    console.log("    1. Open a new Claude Code session (slash commands load at session start).");
-    console.log("    2. Type:  /research  <your query>");
-    console.log("    3. Optional: add `/research` to your project CLAUDE.md so teammates discover it.");
+    console.log("    Type:  /research  <your query>     in any project.");
     console.log("");
+    console.log("  Tip: restart Claude Code for full-speed isolated subagent dispatch.");
+    console.log("       /research works immediately either way — fallback path uses");
+    console.log("       general-purpose with the role prompt prepended when the");
+    console.log("       subagent registry hasn't reloaded yet.");
+    console.log("");
+    console.log("  Optional: add `/research` to your project CLAUDE.md so teammates discover it.");
     console.log("  Upgrade later:  cd ~/.claude/skills/deep-research && git pull && node setup.mjs");
     console.log("  Uninstall:      node ~/.claude/skills/deep-research/bin/deep-research-uninstall.mjs");
   }

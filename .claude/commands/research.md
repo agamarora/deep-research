@@ -31,14 +31,46 @@ slug: <slug>
 
 ## Step 2 — hand off to the lead researcher
 
-Invoke the `dr-lead-researcher` subagent via the `Agent` tool. Pass it:
+**Dispatch with fallback** (this is the v0.2.1 robustness contract — read carefully):
 
-- The verbatim query.
-- The absolute run directory path.
-- A note that the run directory is bootstrapped — start with the planning phase.
-- Reminder: **search backends are limited to `WebSearch` and `WebFetch`. No external APIs.**
+1. **Check if `dr-lead-researcher` is in your available `subagent_type` enum** (visible in the `Agent` tool description in your system prompt).
 
-The lead researcher will plan, dispatch parallel `dr-subagent-researcher` workers, synthesize, run `dr-critic` + `dr-citation-checker` passes, and finalize `synthesis.md`.
+2. **If present (native path)** — invoke `Agent` with `subagent_type: dr-lead-researcher`. Pass it:
+   - The verbatim query.
+   - The absolute run directory path.
+   - A note that the run directory is bootstrapped — start with the planning phase.
+   - Reminder: **search backends are limited to `WebSearch` and `WebFetch`. No external APIs.**
+   - In `meta.json`, set `dispatch_mode: "native"`.
+
+3. **If absent (fallback path)** — the user installed deep-research mid-session and the subagent registry hasn't reloaded. Don't fail; fall back gracefully:
+   - `Read` the file `~/.claude/agents/dr-lead-researcher.md` (Windows: `C:\Users\<user>\.claude\agents\dr-lead-researcher.md`). If the file doesn't exist, the framework isn't installed — surface that to the user.
+   - Strip the YAML frontmatter (everything between the leading `---` markers). Keep the body.
+   - Invoke `Agent` with `subagent_type: general-purpose` and a task prompt of the form:
+     ```
+     ROLE DEFINITION (you are dr-lead-researcher, dispatched via fallback path):
+
+     <body of dr-lead-researcher.md>
+
+     ---
+
+     TASK:
+     <verbatim query>
+     Run directory: <absolute path>
+     The run directory is bootstrapped — start with the planning phase.
+     Search backends: WebSearch and WebFetch only. No external APIs.
+
+     IMPORTANT: You are running as general-purpose with the dr-lead-researcher role
+     prompt. When you dispatch dr-subagent-researcher / dr-critic / dr-citation-checker,
+     apply the same try-fallback pattern: prefer subagent_type: dr-* if available;
+     otherwise read ~/.claude/agents/dr-<name>.md, strip frontmatter, dispatch as
+     general-purpose with that role definition prepended. Set meta.json
+     dispatch_mode: "fallback" and add a one-line soft notice to synthesis.md TL;DR.
+     ```
+   - In `meta.json`, set `dispatch_mode: "fallback"`.
+
+   **Try-on-error variant**: if pre-detection is uncertain, you may dispatch native first; on a tool error containing "Agent type 'dr-lead-researcher' not found" or similar, retry on the fallback path. Either approach is acceptable.
+
+The lead researcher (native or fallback) will plan, dispatch parallel `dr-subagent-researcher` workers, synthesize, run `dr-critic` + `dr-citation-checker` passes, and finalize `synthesis.md`.
 
 ## Step 3 — surface the result
 
