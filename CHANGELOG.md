@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## Unreleased
 
+### Changed (v0.2.2 — main-thread orchestrator)
+
+- **The orchestrator role is now the `/research` slash command body**, run on the main thread. Pre-v0.2.2 dispatched a separate `dr-lead-researcher` subagent that was supposed to spawn the `dr-subagent-researcher` workers — but Claude Code blocks subagent → subagent dispatch, so the lead could never actually parallel-dispatch anything. v0.2.1's fallback wrapper masked this gracefully by degrading to in-process sequential execution, but parallel multi-agent dispatch — the headline value prop — never ran.
+- v0.2.2 collapses the lead role into `~/.claude/commands/research.md`. Your main Claude Code session now plans, dispatches `dr-subagent-researcher` workers in parallel (single-message), synthesizes, and dispatches `dr-critic` and `dr-citation-checker`. Only main → subagent dispatches happen, which Claude Code allows.
+- **`dr-lead-researcher.md` is retired** as a managed file. `setup.mjs` prunes it from `~/.claude/agents/` on upgrade (saving a `.bak.deprecated` copy first). Uninstall script also cleans it up if found.
+- The v0.2.1 try-fallback wrapper for the worker dispatches (`dr-subagent-researcher`, `dr-critic`, `dr-citation-checker`) is preserved — it still handles mid-session installs, registry quirks, and forked names. The wrapper for `dr-lead-researcher` is removed since that agent no longer exists.
+- Trade-off: the orchestrator now runs as whatever model the user's main session is using, instead of being pinned to Opus by the agent's frontmatter. In practice the orchestrator's work (planning, dispatching, synthesis) benefits from a strong model anyway, and the parallel dispatch unlock is more valuable than the model pinning.
+
+### Added (v0.2.2)
+
+- **Second sample run** at `examples/sample-run-claude-code-plugin-spec/` — a meta / competitive-analysis run on "Anthropic Claude Code plugin spec — current status, planned shape, ETA as of May 2026." 5 sub-questions, 20 sources (T1: 11, T2: 3, T3: 6), 38 atomic claims. Captured under v0.2.1, demonstrates the graceful-degradation fallback path. `EVAL.md` explains the framing. The original `sample-run-budget-laptop-india/` continues to demonstrate the native multi-agent happy path with critic-driven revision.
+- README architecture diagram + prose updated to reflect main-thread orchestrator.
+
 ### Fixed (v0.2.1 — autocomplete description rendering)
 
 - **Marker injected after YAML frontmatter, not before.** Pre-v0.2.1 wrote `<!-- managed by deep-research ... -->` at the top of every managed file, which broke Claude Code's frontmatter parser. Result: slash-command and skill autocomplete showed the marker comment as the description (e.g., `/research <!-- managed by deep-research ... -->`) instead of the real description text. v0.2.1 detects YAML frontmatter and inserts the marker between the closing `---` and the body.

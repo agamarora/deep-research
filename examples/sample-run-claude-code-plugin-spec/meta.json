@@ -1,0 +1,18 @@
+{
+  "query": "Anthropic Claude Code plugin spec — current status, planned shape, ETA as of May 2026",
+  "slug": "anthropic-claude-code-plugin-spec-status",
+  "created": "2026-05-07T00:00:00Z",
+  "completed": "2026-05-07T00:00:00Z",
+  "complexity": "complex",
+  "subagent_count_planned": 5,
+  "subagent_count_actually_dispatched": 0,
+  "iteration_count": 1,
+  "dispatch_mode": "fallback",
+  "dispatch_notes": "Agent tool returned 'Agent is not available inside subagents' for all 5 dr-subagent-researcher and the dr-critic / dr-citation-checker dispatches. The lead executed all five sub-question research streams sequentially using only WebSearch + WebFetch, then performed self-critic and self-citation passes. All artifacts (plan.md, notes/1..5.md, claims.md, sources.md, audit.md, synthesis.md) were written.",
+  "status": "final",
+  "search_backends_used": ["WebSearch", "WebFetch"],
+  "sources_total": 20,
+  "sources_t1": 11,
+  "sources_t2": 3,
+  "sources_t3": 6
+}

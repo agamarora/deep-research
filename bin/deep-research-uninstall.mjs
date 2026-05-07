@@ -49,6 +49,8 @@ const STATE_DIR  = join(HOME, ".deep-research");
 const REPO_DIR   = join(CLAUDE_DIR, "skills", "deep-research");
 
 const TARGETS = [
+  // dr-lead-researcher.md kept for backward-compat: pre-v0.2.2 installs may
+  // have it on disk. setup.mjs prunes on upgrade; uninstall removes here too.
   join(CLAUDE_DIR, "agents",   "dr-lead-researcher.md"),
   join(CLAUDE_DIR, "agents",   "dr-subagent-researcher.md"),
   join(CLAUDE_DIR, "agents",   "dr-critic.md"),

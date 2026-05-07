@@ -4,7 +4,7 @@
 //
 // Usage: node setup.mjs [--force] [--quiet] [--dry-run] [--help]
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync, copyFileSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync, copyFileSync, rmSync } from "node:fs";
 import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
@@ -31,8 +31,8 @@ Flags:
   --help, -h   This message.
 
 Installs into:
-  ~/.claude/agents/dr-*.md            (4 agent definitions)
-  ~/.claude/commands/research.md      (the /research slash command)
+  ~/.claude/agents/dr-*.md            (3 worker agent definitions)
+  ~/.claude/commands/research.md      (the /research slash command — embeds lead role)
   ~/.claude/skills/deep-research/     (skill marker + state via this repo)
 
 Re-run after \`git pull\` to upgrade. Removes nothing on its own — see bin/deep-research-uninstall.
@@ -66,12 +66,22 @@ const SKILLS_DIR = join(CLAUDE_DIR, "skills", "deep-research");
 const STATE_DIR = join(HOME, ".deep-research");
 
 const FILES = [
-  { src: ".claude/agents/dr-lead-researcher.md",     dst: join(AGENTS_DIR,   "dr-lead-researcher.md") },
   { src: ".claude/agents/dr-subagent-researcher.md", dst: join(AGENTS_DIR,   "dr-subagent-researcher.md") },
   { src: ".claude/agents/dr-critic.md",              dst: join(AGENTS_DIR,   "dr-critic.md") },
   { src: ".claude/agents/dr-citation-checker.md",    dst: join(AGENTS_DIR,   "dr-citation-checker.md") },
   { src: ".claude/commands/research.md",             dst: join(COMMANDS_DIR, "research.md") },
   { src: ".claude/skills/deep-research/SKILL.md",    dst: join(SKILLS_DIR,   "SKILL.md") },
+];
+
+// Files that were managed by deep-research in earlier versions and have been
+// retired. setup.mjs removes these on upgrade if they still carry the
+// management marker. Foreign files (no marker) are left alone.
+const DEPRECATED_FILES = [
+  // v0.2.2: dr-lead-researcher was a dispatched subagent. The Claude Code
+  // platform blocks subagent-of-subagent dispatch, so the lead could never
+  // actually spawn workers. v0.2.2 collapses the lead role into the /research
+  // slash command body — main thread orchestrates directly.
+  join(AGENTS_DIR, "dr-lead-researcher.md"),
 ];
 
 const MARKER_RE = /<!--\s*managed by deep-research\s+v([a-f0-9]+)\s+sha:([a-f0-9]+)\s*-->/i;
@@ -180,6 +190,32 @@ function copyOne({ src, dst }) {
   }
 }
 
+function pruneDeprecated() {
+  const removed = [];
+  for (const path of DEPRECATED_FILES) {
+    if (!existsSync(path)) continue;
+    let content;
+    try { content = readFileSync(path, "utf8"); }
+    catch { continue; }
+    if (!MARKER_RE.test(content)) {
+      log(`  -  ${path}  (deprecated, not marker-managed; left alone)`);
+      continue;
+    }
+    log(`  ✗ ${path}  (deprecated; removed; backup at ${path}.bak.deprecated)`);
+    if (!DRY_RUN) {
+      try {
+        copyFileSync(path, path + ".bak.deprecated");
+        rmSync(path, { force: true });
+      } catch (e) {
+        warn(`     ! could not remove: ${e.message}`);
+        continue;
+      }
+    }
+    removed.push(path);
+  }
+  return removed;
+}
+
 function writeStateFile() {
   ensureDir(STATE_DIR);
   const versionFile = join(STATE_DIR, "version");
@@ -187,7 +223,7 @@ function writeStateFile() {
   writeFileSync(versionFile, `${COMMIT}\n`, "utf8");
 }
 
-function banner(results) {
+function banner(results, pruned = []) {
   if (QUIET) return;
   const installed   = results.filter(r => r.action === "installed").length;
   const upgraded    = results.filter(r => r.action === "upgraded").length;
@@ -203,6 +239,7 @@ function banner(results) {
   console.log(`  installed: ${installed}   upgraded: ${upgraded}   current: ${current}`);
   if (forced)  console.log(`  force-overwritten: ${forced}`);
   if (foreign) console.log(`  skipped (foreign): ${foreign}    (re-run with --force)`);
+  if (pruned.length) console.log(`  pruned (deprecated): ${pruned.length}`);
   if (errors)  console.log(`  errors: ${errors}`);
   console.log("");
   if (foreign === 0 && errors === 0) {
@@ -236,8 +273,9 @@ function main() {
       results.push({ action: "error" });
     }
   }
+  const pruned = pruneDeprecated();
   writeStateFile();
-  banner(results);
+  banner(results, pruned);
 
   const errored = results.some(r => r.action === "error");
   process.exit(errored ? 1 : 0);

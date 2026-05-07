@@ -8,7 +8,7 @@
 
 A framework that turns any Claude Code project into a publication-quality research engine. Plan → parallel subagents → synthesis → adversarial critic → citation audit. Native `WebSearch` and `WebFetch` only. No Tavily, no Firecrawl, no Exa, no MCP search servers.
 
-Inspired by [Anthropic's published multi-agent research architecture](https://www.anthropic.com/engineering/multi-agent-research-system) (Opus lead + Sonnet subagents, 90.2% better than single-agent on internal evals).
+Inspired by [Anthropic's published multi-agent research architecture](https://www.anthropic.com/engineering/multi-agent-research-system) (orchestrator + parallel research subagents, 90.2% better than single-agent on internal evals). Your main session plays the orchestrator role; `dr-subagent-researcher`, `dr-critic`, and `dr-citation-checker` run as parallel subagents.
 
 ## Install — 30 seconds
 
@@ -29,11 +29,10 @@ node setup.mjs
 ### What gets created on disk
 
 - `~/.claude/skills/deep-research/` — the cloned repo (skill + source of truth)
-- `~/.claude/agents/dr-lead-researcher.md` — orchestrator (Opus)
+- `~/.claude/commands/research.md` — the `/research` slash command (embeds the orchestrator role)
 - `~/.claude/agents/dr-subagent-researcher.md` — parallel worker (Sonnet)
 - `~/.claude/agents/dr-critic.md` — adversarial review (Sonnet)
 - `~/.claude/agents/dr-citation-checker.md` — claim→source audit (Haiku)
-- `~/.claude/commands/research.md` — the `/research` slash command
 - `~/.deep-research/version` — installed commit hash
 
 Each managed file carries a `<!-- managed by deep-research v<commit> sha:<hash> -->` header so re-runs of `setup.mjs` skip already-current files and back up edits before overwriting.
@@ -46,7 +45,7 @@ In any Claude Code project, type:
 /research competitive landscape of OSS multi-agent frameworks in 2026
 ```
 
-The `dr-lead-researcher` subagent plans the work, dispatches parallel `dr-subagent-researcher` workers, synthesizes a draft, runs `dr-critic` for adversarial review, then `dr-citation-checker` to verify every claim. Output lands at `reports/<YYYY-MM-DD>-<slug>/` with a cover-page `README.md` GitHub auto-renders.
+Your main Claude Code session plays the orchestrator role: plan, dispatch parallel `dr-subagent-researcher` workers, synthesize a draft, then run `dr-critic` for adversarial review and `dr-citation-checker` to verify every claim. Output lands at `reports/<YYYY-MM-DD>-<slug>/` with a cover-page `README.md` GitHub auto-renders.
 
 > **Mid-session install?** Slash commands hot-reload, but Claude Code's `subagent_type` enum freezes at session start. v0.2.1+ handles this with a fallback path: if the `dr-*` agents aren't registered yet, dispatch falls back to `general-purpose` with the role prompt prepended. `synthesis.md` carries `dispatch_mode: fallback` and a soft notice. Restart for native isolated dispatch on future runs — output quality is unaffected either way.
 
@@ -54,9 +53,12 @@ The `dr-lead-researcher` subagent plans the work, dispatches parallel `dr-subage
 
 ### What does the output look like?
 
-See [`examples/sample-run-budget-laptop-india/`](examples/sample-run-budget-laptop-india/) — a real run with 8 subagents, 136 sources, 58 claims, and a critic-reviewed synthesis.
+Two committed sample runs:
 
-[`synthesis.md`](examples/sample-run-budget-laptop-india/synthesis.md) is the final report; [`audit.md`](examples/sample-run-budget-laptop-india/audit.md) shows what the critic caught and fixed.
+- [`examples/sample-run-budget-laptop-india/`](examples/sample-run-budget-laptop-india/) — buy-decision shape. 8 subagents, 136 sources, 58 claims; critic-driven revision (SKU drift caught, fixed in v2). Demonstrates the native multi-agent happy path.
+- [`examples/sample-run-claude-code-plugin-spec/`](examples/sample-run-claude-code-plugin-spec/) — meta/comp shape. 5 sub-questions, 20 sources (11 T1, 3 T2, 6 T3), 38 claims. Captured under v0.2.1 when the framework hit the subagent-of-subagent dispatch block; the run gracefully degraded via the v0.2.1 fallback path. v0.2.2's main-thread orchestrator removes that limitation — see [`EVAL.md`](examples/sample-run-claude-code-plugin-spec/EVAL.md).
+
+In each, [`synthesis.md`](examples/sample-run-budget-laptop-india/synthesis.md) is the final report; [`audit.md`](examples/sample-run-budget-laptop-india/audit.md) is the critic + citation audit.
 
 ### Upgrade
 
@@ -91,12 +93,10 @@ User
   │
   ▼
 /research <query>           ← bootstraps reports/<date>-<slug>/
-  │
-  ▼
-dr-lead-researcher          ← Opus. Plans, decomposes, synthesizes.
+                            ← main session = orchestrator (plans, decomposes, synthesizes)
   │
   ├─ dr-subagent-researcher  ┐
-  ├─ dr-subagent-researcher  ├─ Sonnet. Parallel. One per sub-question.
+  ├─ dr-subagent-researcher  ├─ Sonnet. Parallel, single-message dispatch. One per sub-question.
   └─ dr-subagent-researcher  ┘
   │
   ├─ dr-critic              ← Sonnet. Adversarial review.
@@ -105,6 +105,8 @@ dr-lead-researcher          ← Opus. Plans, decomposes, synthesizes.
   ▼
 synthesis.md  +  audit.md  +  sources.md  +  claims.md  +  README.md
 ```
+
+The `/research` slash command body **is** the orchestrator. Pre-v0.2.2 dispatched a separate `dr-lead-researcher` subagent, but Claude Code blocks subagent → subagent dispatch — that lead could never spawn workers. v0.2.2 collapses the lead into the main thread; `dr-subagent-researcher`, `dr-critic`, and `dr-citation-checker` are the only subagents now.
 
 ## Output convention
 

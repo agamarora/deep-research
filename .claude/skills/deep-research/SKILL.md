@@ -1,11 +1,13 @@
 ---
 name: deep-research
-description: Use the multi-agent deep-research framework — lead researcher orchestrates parallel subagents, critic audits, citation checker verifies sources, all artifacts persisted under reports/. Trigger when the user asks to "research", "investigate", "compare", "validate idea", "comp analysis", "buy decision", or any open-ended question that benefits from iterative search + synthesis. Native search only (WebSearch + WebFetch), no external APIs.
+description: Use the multi-agent deep-research framework — main thread orchestrates, parallel subagents research, critic audits, citation checker verifies sources, all artifacts persisted under reports/. Trigger when the user asks to "research", "investigate", "compare", "validate idea", "comp analysis", "buy decision", or any open-ended question that benefits from iterative search + synthesis. Native search only (WebSearch + WebFetch), no external APIs.
 ---
 
 # Deep Research Framework
 
-This repo implements a Claude-Code-native multi-agent deep-research system based on Anthropic's published architecture (Opus lead + Sonnet subagents — 90.2% better than single-agent on internal evals).
+This repo implements a Claude-Code-native multi-agent deep-research system based on Anthropic's published architecture (orchestrator + parallel research subagents — 90.2% better than single-agent on internal evals).
+
+The orchestrator role lives in the `/research` slash command body — your main session is the lead. It plans, dispatches `dr-subagent-researcher` workers in parallel, synthesizes their notes, then dispatches `dr-critic` and `dr-citation-checker` for adversarial review and citation auditing. This avoids Claude Code's subagent-of-subagent dispatch block: only main → subagent calls happen.
 
 ## When to invoke
 
@@ -27,29 +29,32 @@ Two paths:
 1. **User-driven**: user types `/research <query>` — that command handles bootstrapping and hands off to the lead researcher.
 2. **Auto**: Claude Code recognizes a research-shaped request and invokes `/research` proactively. Confirm scope with the user first if the query is ambiguous (e.g. "research laptops" → ask which use case, budget, OS preference).
 
+The `/research` slash command body is the lead orchestrator. It plans, dispatches `dr-subagent-researcher` workers in parallel, synthesizes their notes, then runs `dr-critic` and `dr-citation-checker` for adversarial review and citation auditing — all from the main session.
+
 ## Architecture
 
 ```
 User
   │
   ▼
-/research command (bootstrap run dir)
+/research command — main thread is the orchestrator
   │
-  ▼
-dr-lead-researcher (Opus)     ← plans, decomposes, synthesizes
+  ├── plans, decomposes the query, writes plan.md
   │
-  ├── Agent → dr-subagent-researcher (Sonnet)  ← runs sub-question 1
-  ├── Agent → dr-subagent-researcher (Sonnet)  ← runs sub-question 2  [parallel]
-  ├── Agent → dr-subagent-researcher (Sonnet)  ← runs sub-question 3
+  ├── Agent → dr-subagent-researcher (Sonnet)  ← sub-question 1  ┐
+  ├── Agent → dr-subagent-researcher (Sonnet)  ← sub-question 2  ├── parallel,
+  ├── Agent → dr-subagent-researcher (Sonnet)  ← sub-question 3  ┘   single message
   │
-  ▼ (synthesize draft)
+  ▼ synthesize claims.md + sources.md + draft synthesis.md
   │
   ├── Agent → dr-critic (Sonnet)            ← adversarial audit
   └── Agent → dr-citation-checker (Haiku)   ← claim→source verification
   │
   ▼
-synthesis.md + audit.md
+synthesis.md + audit.md + meta.json
 ```
+
+**Why main-thread orchestrator?** Claude Code allows main → subagent dispatch but blocks subagent → subagent. A separately dispatched "lead" subagent could never spawn workers. Embedding the lead role in the slash command body is what makes parallel dispatch actually work. (Pre-v0.2.2 used a separate `dr-lead-researcher` subagent; this is now retired.)
 
 ## Output convention
 
@@ -76,7 +81,7 @@ This convention is part of the framework — don't drift from it across runs.
 | Direct comparison | 2-4 | 10-15 | "Pinecone vs Weaviate vs Qdrant for our use case" |
 | Complex research | 5-10+ | 10-15 | "Comp analysis of the LLM observability market" |
 
-Lead researcher classifies in `plan.md` and dispatches accordingly.
+Main thread classifies in `plan.md` and dispatches accordingly.
 
 ## Eight prompt-engineering principles (applied)
 
@@ -92,7 +97,7 @@ Lead researcher classifies in `plan.md` and dispatches accordingly.
 ## Hard constraints
 
 - **Native search only** — `WebSearch` + `WebFetch`. No Tavily/Firecrawl/Exa/MCP search. Repo is API-key-free by design.
-- **Persist plan to disk** — the run directory is the lead's working memory. Survives context compaction.
+- **Persist plan to disk** — the run directory is the orchestrator's working memory. Survives context compaction.
 - **No fabrication** — every non-trivial claim cites a source. Open questions go under "Open questions," not invented answers.
 - **Single-message parallelism** — sequential subagent dispatch defeats the architecture.
 - **Don't overwrite prior runs** — collisions append `-2`, `-3`, etc.
