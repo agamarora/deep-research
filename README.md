@@ -6,9 +6,19 @@
 [![License](https://img.shields.io/github/license/agamarora/deep-research?color=blue)](LICENSE)
 [![Claude Code](https://img.shields.io/badge/Claude%20Code-native-orange)](https://docs.anthropic.com/en/docs/claude-code)
 
-A framework that turns any Claude Code project into a publication-quality research engine. Plan → parallel subagents → synthesis → adversarial critic → citation audit. Native `WebSearch` and `WebFetch` only. No Tavily, no Firecrawl, no Exa, no MCP search servers.
+![demo](assets/demo.gif)
 
-Inspired by [Anthropic's published multi-agent research architecture](https://www.anthropic.com/engineering/multi-agent-research-system) (orchestrator + parallel research subagents, 90.2% better than single-agent on internal evals). Your main session plays the orchestrator role; `dr-subagent-researcher`, `dr-critic`, and `dr-citation-checker` run as parallel subagents.
+> Type `/research <query>` in any Claude Code project. Get a publication-quality, evidence-backed report at `reports/<date>-<slug>/synthesis.md` — typically 5-10 minutes later. Plan → parallel subagents → synthesis → adversarial critic → citation audit.
+
+### What makes this different
+
+- **Zero API keys.** Native `WebSearch` and `WebFetch` only. No Tavily, no Firecrawl, no Exa, no MCP search servers — no signup, no monthly limits, no per-query billing on top of Claude Code.
+- **30-second install.** Paste one line into Claude Code — `git clone … && node setup.mjs` — and `/research` works in every project on this machine. No Python service, no LangGraph, no environment to manage.
+- **Real multi-agent dispatch.** Your main session is the orchestrator; `dr-subagent-researcher × N`, `dr-critic`, and `dr-citation-checker` run as actual parallel Claude Code subagents — not a single agent simulating a team.
+- **Built on Anthropic's published architecture.** Orchestrator + parallel research subagents — [the same pattern that beat single-agent by 90.2% on internal evals](https://www.anthropic.com/engineering/multi-agent-research-system).
+- **Persistent and inspectable.** Every run is a structured directory you can git-track, revisit, and audit — `query.md`, `plan.md`, `notes/`, `sources.md`, `claims.md`, `synthesis.md`, `audit.md`, `meta.json`.
+
+> **What's new in v0.2.2** — the `/research` slash command body now embeds the orchestrator role and runs on the main thread. Pre-v0.2.2 dispatched a separate `dr-lead-researcher` subagent which Claude Code's subagent-of-subagent block prevented from spawning workers. v0.2.2 unblocks real parallel dispatch. See [CHANGELOG](CHANGELOG.md#v022--2026-05-07).
 
 ## Install — 30 seconds
 
@@ -129,7 +139,7 @@ Customize the cover-page template at `templates/run-readme.md.template`.
 
 ## Scaling
 
-`dr-lead-researcher` classifies query complexity and scales accordingly:
+The orchestrator (`/research` slash command body, running on the main thread) classifies query complexity and scales accordingly:
 
 | Complexity        | Agents  | Tool calls / agent |
 |-------------------|---------|--------------------|
@@ -142,7 +152,7 @@ A complex run uses ~15× the tokens of normal chat. Don't `/research` "what's to
 ## FAQ
 
 **Q: I already have a `reports/` directory in my project for something else.**
-By default this framework writes to `reports/<date>-<slug>/`. Two ways to handle the collision: (a) move your existing `reports/` to a different name, or (b) edit the run path in your installed `~/.claude/agents/dr-lead-researcher.md` and `~/.claude/commands/research.md` (changes will be flagged on next `setup.mjs` re-run; pass `--force` to keep them). A path-config option is on the v0.3 roadmap.
+By default this framework writes to `reports/<date>-<slug>/`. Two ways to handle the collision: (a) move your existing `reports/` to a different name, or (b) edit the run path in your installed `~/.claude/commands/research.md` (changes will be flagged on next `setup.mjs` re-run; pass `--force` to keep them). A path-config option is on the v0.3 roadmap.
 
 **Q: Do I need an API key for anything?**
 No. The framework uses Claude Code's bundled `WebSearch` and `WebFetch`. No Tavily, no Firecrawl, no Exa. No external account.
@@ -151,11 +161,20 @@ No. The framework uses Claude Code's bundled `WebSearch` and `WebFetch`. No Tavi
 Yes, in your fork. The base framework deliberately doesn't, because the install UX ("drop the folder, type `/research`") only works if there are no setup steps.
 
 **Q: How is this different from gpt-researcher / langchain open_deep_research / Defiect's plugin?**
-- **gpt-researcher**: Python service, requires API keys (OpenAI/Anthropic + a search provider). Different deployment shape.
-- **langchain open_deep_research**: LangGraph-based, requires LangSmith config and API keys. Much heavier setup.
-- **Defiect's plugin**: more sophisticated evidence-graph machinery, comparable architecture, but slightly different emphasis.
 
-This framework's edge is install simplicity (paste one line, type `/research`) and the no-API-key constraint that flows from it.
+|                          | deep-research (this)            | gpt-researcher              | langchain open_deep_research | Defiect Claude Code plugin |
+|--------------------------|---------------------------------|-----------------------------|------------------------------|----------------------------|
+| Runtime                  | Claude Code (markdown only)     | Python service              | LangGraph runtime            | Claude Code plugin         |
+| API keys required        | **None**                        | OpenAI/Anthropic + search   | Anthropic + LangSmith + search | None (Anthropic via CC)  |
+| Install                  | `git clone && node setup.mjs`   | `pip install` + env vars    | clone + Python + config      | install plugin             |
+| Search                   | `WebSearch` + `WebFetch` (CC)   | Tavily / SerpAPI / Bing     | Tavily / DuckDuckGo / etc.   | Native CC tools            |
+| Multi-agent              | Yes — main + 3 worker types     | Single agent loop           | LangGraph multi-step         | Multi-agent                |
+| Adversarial critic pass  | Yes (`dr-critic`)               | No                          | Optional reflection          | Some                       |
+| Citation audit gate      | Yes (`dr-citation-checker`)     | No                          | No                           | Some                       |
+| Output convention        | Structured run dir (8 artifacts)| Single report file          | Notebook-style state         | Single report              |
+| Deps to vendor           | 0                               | many (LangChain, etc.)      | many                         | depends                    |
+
+This framework's edge: install simplicity (paste one line, type `/research`), the no-API-key constraint that flows from it, and the structured persistent run directory that turns research into a compounding asset rather than a one-shot Q&A.
 
 **Q: What if Anthropic ships a first-party deep-research feature or official plugin spec?**
 Then this framework adopts whichever path Anthropic publishes. The orchestrator-subagents pattern is portable — agents and the slash command are plain markdown. Until then, this is the path.
